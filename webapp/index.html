@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Калькулятор Калорий</title>
+  <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Регистрация -->
+    <section id="view-register" class="view hidden">
+      <header class="top">
+        <h1>Калькулятор Калорий</h1>
+        <p class="sub">Настройка профиля</p>
+      </header>
+      <form id="reg-form" class="card form">
+        <label>Пол
+          <select name="gender" required>
+            <option value="female">Женский</option>
+            <option value="male">Мужской</option>
+          </select>
+        </label>
+        <label>Возраст
+          <input name="age" type="number" min="10" max="100" required placeholder="25" />
+        </label>
+        <label>Рост (см)
+          <input name="height" type="number" min="100" max="250" step="0.1" required placeholder="170" />
+        </label>
+        <label>Вес (кг)
+          <input name="weight" type="number" min="30" max="300" step="0.1" required placeholder="65" />
+        </label>
+        <label>Активность
+          <select name="activity" required>
+            <option value="sedentary">Малоподвижный</option>
+            <option value="light">Лёгкая</option>
+            <option value="moderate" selected>Средняя</option>
+            <option value="active">Высокая</option>
+            <option value="very_active">Очень высокая</option>
+          </select>
+        </label>
+        <label>Цель
+          <select name="goal" required>
+            <option value="lose">Похудение</option>
+            <option value="maintain" selected>Поддержание веса</option>
+            <option value="gain">Набор массы</option>
+          </select>
+        </label>
+        <button type="submit" class="btn primary">Рассчитать норму</button>
+      </form>
+    </section>
+
+    <!-- Главная / Дневник сводка -->
+    <section id="view-home" class="view hidden">
+      <header class="top">
+        <h1>Калькулятор Калорий</h1>
+        <p class="sub" id="date-label">Сегодня</p>
+      </header>
+
+      <div class="card ring-card">
+        <div class="ring-wrap">
+          <svg class="ring" viewBox="0 0 120 120">
+            <circle class="ring-bg" cx="60" cy="60" r="52" />
+            <circle id="cal-ring" class="ring-fg" cx="60" cy="60" r="52" />
+          </svg>
+          <div class="ring-center">
+            <span class="muted">Калории</span>
+            <strong id="cal-pct">0%</strong>
+            <span id="cal-frac">0 / 0 ккал</span>
+          </div>
+          <span class="float-icon i1">🥗</span>
+          <span class="float-icon i2">🍜</span>
+          <span class="float-icon i3">🥛</span>
+          <span class="float-icon i4">🥐</span>
+        </div>
+        <p class="remain" id="cal-remain">Осталось: 0 ккал</p>
+      </div>
+
+      <div class="macros">
+        <div class="macro">
+          <div class="macro-head"><span>Белки 🍗</span><span id="p-pct">0%</span></div>
+          <div class="bar"><i id="p-bar" class="fill blue"></i></div>
+          <div class="macro-val" id="p-val">0 / 0г</div>
+        </div>
+        <div class="macro">
+          <div class="macro-head"><span>Жиры 🥑</span><span id="f-pct">0%</span></div>
+          <div class="bar"><i id="f-bar" class="fill yellow"></i></div>
+          <div class="macro-val" id="f-val">0 / 0г</div>
+        </div>
+        <div class="macro">
+          <div class="macro-head"><span>Углеводы 🍝</span><span id="c-pct">0%</span></div>
+          <div class="bar"><i id="c-bar" class="fill purple"></i></div>
+          <div class="macro-val" id="c-val">0 / 0г</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Последние приёмы пищи</h2>
+          <button type="button" class="link" id="btn-add-meal">+ Добавить</button>
+        </div>
+        <ul id="recent-list" class="list"></ul>
+      </div>
+    </section>
+    <section id="view-diary" class="view hidden">
+      <header class="top">
+        <h1>Дневник</h1>
+        <p class="sub">Записи за сегодня</p>
+      </header>
+      <button type="button" class="btn primary block" id="btn-diary-add">➕ Добавить приём пищи</button>
+      <ul id="diary-list" class="list card"></ul>
+    </section>
+    <section id="view-add" class="view hidden">
+      <header class="top">
+        <h1>Калькулятор Калорий</h1>
+        <p class="sub">Добавление приёма пищи</p>
+      </header>
+      <div class="card form">
+        <h2 id="add-meal-title" class="meal-title">☀️ Обед</h2>
+        <div class="meal-tabs" id="meal-tabs">
+          <button type="button" data-meal="breakfast">Завтрак</button>
+          <button type="button" data-meal="lunch" class="active">Обед</button>
+          <button type="button" data-meal="dinner">Ужин</button>
+          <button type="button" data-meal="snack">Перекус</button>
+        </div>
+        <label class="search-label">
+          <span class="search-icon">🔍</span>
+          <input id="product-query" type="search" placeholder="Поиск продукта..." autocomplete="off" />
+        </label>
+        <div id="search-results" class="search-results"></div>
+        <button type="button" class="btn ghost block" id="btn-add-custom-from-meal">＋ Добавить свой продукт</button>
+        <label>Название
+          <input id="add-name" type="text" readonly placeholder="Выберите из поиска" />
+        </label>
+        <label>Вес (граммы)
+          <input id="add-weight" type="number" min="1" max="5000" value="100" />
+        </label>
+        <p class="total-line" id="add-total">🔥 Всего: 0 ккал</p>
+        <button type="button" class="btn primary block" id="btn-confirm-add">➕ Добавить в дневник</button>
+        <button type="button" class="btn ghost block" id="btn-cancel-add">❌ Отмена</button>
+      </div>
+    </section>
+
+
+    <section id="view-stats" class="view hidden">
+      <header class="top">
+        <h1>Статистика 📊</h1>
+        <p class="sub">Динамика рациона</p>
+      </header>
+      <div class="seg">
+        <button type="button" data-period="today" class="active">Сегодня</button>
+        <button type="button" data-period="week">Неделя</button>
+        <button type="button" data-period="month">Месяц</button>
+      </div>
+      <div id="stats-body" class="card"></div>
+      <div class="card">
+        <h2>Рекомендации</h2>
+        <ul id="tips-list" class="tips"></ul>
+      </div>
+    </section>
+
+    <!-- Продукты -->
+    <section id="view-products" class="view hidden">
+      <header class="top">
+        <h1>Продукты 🍽</h1>
+        <p class="sub">Локальная база + Open Food Facts</p>
+      </header>
+      <label class="search-label">
+        <span class="search-icon">🔍</span>
+        <input id="prod-query" type="search" placeholder="Найти продукт..." />
+      </label>
+      <div id="prod-results" class="search-results card"></div>
+      <button type="button" class="btn primary block" id="btn-open-product-form">＋ Добавить свой продукт</button>
+
+      <form id="custom-product-form" class="card form hidden" style="margin-top:12px">
+        <h2 style="margin-bottom:12px">Новый продукт</h2>
+        <label>Название
+          <input id="custom-name" type="text" maxlength="100" required placeholder="Например, Сосиски" />
+        </label>
+        <label>Категория
+          <select id="custom-category">
+            <option>Мясо и колбасные изделия</option>
+            <option>Мясо и птица</option>
+            <option>Рыба и морепродукты</option>
+            <option>Молочные</option>
+            <option>Яйца</option>
+            <option>Крупы</option>
+            <option>Бобовые</option>
+            <option>Овощи</option>
+            <option>Фрукты</option>
+            <option>Сухофрукты</option>
+            <option>Орехи и семена</option>
+            <option>Хлеб и выпечка</option>
+            <option>Готовые блюда</option>
+            <option>Соусы</option>
+            <option>Сладости</option>
+            <option>Снеки</option>
+            <option>Напитки</option>
+            <option>Жиры и масла</option>
+            <option>Другое</option>
+          </select>
+        </label>
+        <div class="nutrient-grid">
+          <label>Ккал / 100 г
+            <input id="custom-calories" type="number" min="0" max="5000" step="0.1" required placeholder="250" />
+          </label>
+          <label>Белки, г
+            <input id="custom-protein" type="number" min="0" max="100" step="0.1" required placeholder="10" />
+          </label>
+          <label>Жиры, г
+            <input id="custom-fat" type="number" min="0" max="100" step="0.1" required placeholder="20" />
+          </label>
+          <label>Углеводы, г
+            <input id="custom-carbs" type="number" min="0" max="100" step="0.1" required placeholder="5" />
+          </label>
+        </div>
+        <button type="submit" class="btn primary block">Сохранить продукт</button>
+        <button type="button" class="btn ghost block" id="btn-cancel-product-form">Отмена</button>
+      </form>
+    </section>
+
+    <section id="view-profile" class="view hidden">
+      <header class="top">
+        <h1>Профиль 👤</h1>
+        <p class="sub">Личные данные и норма</p>
+      </header>
+      <div id="profile-card" class="card"></div>
+      <form id="weight-form" class="card form">
+        <label>Новый замер веса (кг)
+          <input name="weight" type="number" min="30" max="300" step="0.1" required />
+        </label>
+        <button type="submit" class="btn primary">Сохранить вес</button>
+      </form>
+    </section>
+
+    <div id="toast" class="toast hidden"></div>
+  </div>
+
+  <nav class="nav" id="main-nav">
+    <button type="button" data-view="home" class="active"><span>📖</span>Дневник</button>
+    <button type="button" data-view="stats"><span>📊</span>Статистика</button>
+    <button type="button" data-view="products"><span>🔍</span>Продукты</button>
+    <button type="button" data-view="profile"><span>👤</span>Профиль</button>
+  </nav>
+
+  <script src="/js/app.js?v=2"></script>
+</body>
+</html>
